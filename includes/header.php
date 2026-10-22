@@ -48,13 +48,16 @@ if (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
 </head>
 <body>
 
+<!-- ===== SKIP TO CONTENT (keyboard / screen reader shortcut) ===== -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 <!-- ===== NAVIGATION BAR ===== -->
-<nav class="navbar" id="main-navbar">
+<nav class="navbar" id="main-navbar" aria-label="Main navigation">
     <div class="container navbar-container">
         <!-- Left Side: Brand & Main Navigation -->
         <div class="navbar-left">
             <a href="<?php echo $basePath; ?>index.php" class="navbar-brand" id="navbar-brand">
-                <i class="fa-solid fa-film navbar-brand-icon"></i>
+                <i class="fa-solid fa-film navbar-brand-icon" aria-hidden="true"></i>
                 <span>SineSugbo</span>
             </a>
 
@@ -62,6 +65,7 @@ if (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
                 <li>
                     <a href="<?php echo $basePath; ?>index.php" 
                        class="<?php echo basename($_SERVER['SCRIPT_NAME']) === 'index.php' && $basePath === '' ? 'active' : ''; ?>"
+                       <?php echo basename($_SERVER['SCRIPT_NAME']) === 'index.php' && $basePath === '' ? 'aria-current="page"' : ''; ?>
                        id="nav-home">
                         Home
                     </a>
@@ -69,6 +73,7 @@ if (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
                 <li>
                     <a href="<?php echo $basePath; ?>browse.php" 
                        class="<?php echo basename($_SERVER['SCRIPT_NAME']) === 'browse.php' ? 'active' : ''; ?>"
+                       <?php echo basename($_SERVER['SCRIPT_NAME']) === 'browse.php' ? 'aria-current="page"' : ''; ?>
                        id="nav-movies">
                         Movies
                     </a>
@@ -79,12 +84,12 @@ if (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
         <!-- Center: Integrated Search Bar -->
         <div class="navbar-search-wrapper">
             <form action="<?php echo $basePath; ?>browse.php" method="GET" class="navbar-search" role="search">
-                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
                 <input type="text" name="search" placeholder="Search movies by title..." 
-                       value="<?php echo isset($_GET['search']) ? sanitize($_GET['search']) : ''; ?>" 
-                       autocomplete="off" aria-label="Search movies">
+                       value="<?php echo sanitize($_GET['search'] ?? ''); ?>" 
+                       autocomplete="off" aria-label="Search movies by title">
                 <button type="submit" class="search-submit" aria-label="Submit search">
-                    <i class="fa-solid fa-arrow-right"></i>
+                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                 </button>
             </form>
         </div>
@@ -98,21 +103,24 @@ if (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
                             <a href="<?php echo $basePath; ?>admin/index.php" 
                                class="nav-admin <?php echo strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false ? 'active' : ''; ?>"
                                id="nav-admin">
-                                <i class="fa-solid fa-shield-halved"></i>
+                                <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
                                 <span>Admin</span>
                             </a>
                         </li>
                     <?php endif; ?>
 
                     <li>
-                        <span class="nav-user" id="nav-username">
-                            <i class="fa-regular fa-user"></i>
-                            <span><?php echo sanitize(getCurrentUsername()); ?></span>
-                        </span>
+                        <a href="<?php echo $basePath; ?>profile.php" 
+                           class="<?php echo basename($_SERVER['SCRIPT_NAME']) === 'profile.php' ? 'active' : ''; ?>"
+                           <?php echo basename($_SERVER['SCRIPT_NAME']) === 'profile.php' ? 'aria-current="page"' : ''; ?>
+                           id="nav-profile">
+                            <i class="fa-regular fa-user" aria-hidden="true"></i>
+                            <span>Profile</span>
+                        </a>
                     </li>
                     <li>
                         <a href="<?php echo $basePath; ?>logout.php" id="nav-logout" class="nav-logout">
-                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                            <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
                             <span>Logout</span>
                         </a>
                     </li>
@@ -121,7 +129,7 @@ if (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
                         <a href="<?php echo $basePath; ?>login.php" 
                            class="<?php echo basename($_SERVER['SCRIPT_NAME']) === 'login.php' ? 'active' : ''; ?>"
                            id="nav-login">
-                            Login
+                           Login
                         </a>
                     </li>
                     <li>
@@ -135,7 +143,7 @@ if (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
             </ul>
 
             <!-- Mobile Hamburger Toggle -->
-            <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+            <button class="menu-toggle" id="menu-toggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobile-menu">
                 <span class="menu-icon"></span>
                 <span class="menu-icon"></span>
                 <span class="menu-icon"></span>
@@ -145,53 +153,54 @@ if (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
 
     <!-- Mobile Dropdown Menu -->
     <div class="navbar-mobile-menu" id="mobile-menu">
-        <form action="<?php echo $basePath; ?>browse.php" method="GET" class="mobile-search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" name="search" placeholder="Search movies by title..." 
-                   value="<?php echo isset($_GET['search']) ? sanitize($_GET['search']) : ''; ?>" 
+        <form action="<?php echo $basePath; ?>browse.php" method="GET" class="mobile-search" role="search">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <label for="mobile-search-input" class="sr-only">Search movies by title</label>
+            <input type="text" id="mobile-search-input" name="search" placeholder="Search movies by title..." 
+                   value="<?php echo sanitize($_GET['search'] ?? ''); ?>" 
                    autocomplete="off">
             <button type="submit" aria-label="Submit search">
-                <i class="fa-solid fa-arrow-right"></i>
+                <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
             </button>
         </form>
         <ul class="mobile-nav-links">
             <li>
                 <a href="<?php echo $basePath; ?>index.php" class="<?php echo basename($_SERVER['SCRIPT_NAME']) === 'index.php' && $basePath === '' ? 'active' : ''; ?>">
-                    <i class="fa-solid fa-house"></i> Home
+                    <i class="fa-solid fa-house" aria-hidden="true"></i> Home
                 </a>
             </li>
             <li>
                 <a href="<?php echo $basePath; ?>browse.php" class="<?php echo basename($_SERVER['SCRIPT_NAME']) === 'browse.php' ? 'active' : ''; ?>">
-                    <i class="fa-solid fa-film"></i> Movies
+                    <i class="fa-solid fa-film" aria-hidden="true"></i> Movies
                 </a>
             </li>
             <?php if (isLoggedIn()): ?>
                 <?php if (isAdmin()): ?>
                     <li>
                         <a href="<?php echo $basePath; ?>admin/index.php">
-                            <i class="fa-solid fa-shield-halved"></i> Admin Panel
+                            <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Admin Panel
                         </a>
                     </li>
                 <?php endif; ?>
                 <li>
-                    <span class="mobile-user-info">
-                        <i class="fa-regular fa-user"></i> Signed in as <strong><?php echo sanitize(getCurrentUsername()); ?></strong>
-                    </span>
+                    <a href="<?php echo $basePath; ?>profile.php">
+                        <i class="fa-regular fa-user" aria-hidden="true"></i> Profile
+                    </a>
                 </li>
                 <li>
                     <a href="<?php echo $basePath; ?>logout.php" class="mobile-logout">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Logout
+                        <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i> Logout
                     </a>
                 </li>
             <?php else: ?>
                 <li>
                     <a href="<?php echo $basePath; ?>login.php">
-                        <i class="fa-solid fa-arrow-right-to-bracket"></i> Login
+                        <i class="fa-solid fa-arrow-right-to-bracket" aria-hidden="true"></i> Login
                     </a>
                 </li>
                 <li>
                     <a href="<?php echo $basePath; ?>register.php">
-                        <i class="fa-solid fa-user-plus"></i> Sign Up
+                        <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Sign Up
                     </a>
                 </li>
             <?php endif; ?>
@@ -200,23 +209,24 @@ if (strpos($_SERVER['SCRIPT_NAME'], '/admin/') !== false) {
 </nav>
 
 <!-- ===== MAIN CONTENT CONTAINER ===== -->
-<main class="main-content">
+<main class="main-content" id="main-content">
     <div class="container">
         <?php
         // Display one-time flash notification if set
         $flash = getFlashMessage();
         if ($flash): ?>
-            <div class="alert alert-<?php echo sanitize($flash['type']); ?>" id="flash-message">
+            <div class="alert alert-<?php echo sanitize($flash['type']); ?>" id="flash-message"
+                 role="alert" aria-live="<?php echo $flash['type'] === 'error' ? 'assertive' : 'polite'; ?>">
                 <div class="alert-content">
                     <?php if ($flash['type'] === 'success'): ?>
-                        <i class="fa-solid fa-circle-check"></i>
+                        <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
                     <?php elseif ($flash['type'] === 'error'): ?>
-                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>
                     <?php else: ?>
-                        <i class="fa-solid fa-circle-info"></i>
+                        <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
                     <?php endif; ?>
                     <span><?php echo sanitize($flash['message']); ?></span>
                 </div>
-                <button class="alert-close" onclick="this.closest('.alert').remove()" aria-label="Close">&times;</button>
+                <button type="button" class="alert-close" aria-label="Dismiss notification">&times;</button>
             </div>
         <?php endif; ?>

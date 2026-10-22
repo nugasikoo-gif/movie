@@ -56,13 +56,48 @@ function getCurrentUsername(): ?string {
 }
 
 /**
+ * Get the current user's email.
+ * 
+ * @return string|null The email, or null if not logged in.
+ */
+function getCurrentUserEmail(): ?string {
+    return $_SESSION['user_email'] ?? null;
+}
+
+/**
+ * Build the absolute base URL of the application.
+ * Detected from the script location so the project keeps working
+ * if the folder is renamed or moved.
+ *
+ * @return string The base URL with a trailing slash (e.g. "/moviedb/").
+ */
+function appBaseUrl(): string {
+    static $baseUrl = null;
+
+    if ($baseUrl !== null) {
+        return $baseUrl;
+    }
+
+    $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
+    $appRoot = rtrim(str_replace('\\', '/', dirname(dirname($scriptName))), '/');
+
+    // For pages inside /admin/ the app root is one level higher.
+    if (substr($appRoot, -6) === '/admin') {
+        $appRoot = substr($appRoot, 0, -6);
+    }
+
+    $baseUrl = ($appRoot === '' ? '' : $appRoot) . '/';
+    return $baseUrl;
+}
+
+/**
  * Require the user to be logged in.
  * If not logged in, redirect to the login page with a message.
  */
 function requireLogin(): void {
     if (!isLoggedIn()) {
         setFlashMessage('Please log in to access this page.', 'error');
-        header('Location: login.php');
+        header('Location: ' . appBaseUrl() . 'login.php');
         exit;
     }
 }
@@ -75,9 +110,46 @@ function requireAdmin(): void {
     requireLogin(); // Must be logged in first
     if (!isAdmin()) {
         setFlashMessage('Access denied. Admin privileges required.', 'error');
-        header('Location: ../index.php');
+        header('Location: ' . appBaseUrl() . 'index.php');
         exit;
     }
+}
+
+/**
+ * Sanitise a redirect target so it can only point at this application.
+ *
+ * Only relative paths (no scheme, no host) are accepted. Anything
+ * else falls back to the home page, which prevents open-redirect
+ * attacks such as "login.php?redirect=https://example.org".
+ *
+ * @param mixed $target The requested redirect target.
+ * @param string $fallback The page to use when the target is not safe.
+ * @return string A safe relative URL.
+ */
+function safeRedirectTarget(mixed $target, string $fallback = 'index.php'): string {
+    if (!is_string($target) || $target === '') {
+        return $fallback;
+    }
+
+    $target = trim($target);
+
+    // Reject absolute URLs, protocol-relative URLs and backslash tricks.
+    if (str_contains($target, '//') || str_contains($target, '\\')) {
+        return $fallback;
+    }
+    if (preg_match('#^[a-zA-Z][a-zA-Z0-9+.-]*:#', $target)) {
+        return $fallback;
+    }
+    if ($target[0] !== '/') {
+        return $fallback;
+    }
+
+    // Only allow simple file names plus optional query string.
+    if (!preg_match('#^/[A-Za-z0-9_\-]+(?:\.php)?(?:\?[A-Za-z0-9_=&%.\-]*)?$#', $target)) {
+        return $fallback;
+    }
+
+    return $target;
 }
 
 /**
@@ -134,12 +206,46 @@ function getFlashMessage(): ?array {
 }
 
 /**
- * Sanitize a string for safe HTML output.
+ * Sanitize a value for safe HTML output.
  * This prevents XSS (Cross-Site Scripting) attacks.
- * 
- * @param string|null $string The string to sanitize.
+ *
+ * Accepts any type so it is safe to call directly on request
+ * parameters: arrays and non-scalar values are reduced to an
+ * empty string instead of triggering a TypeError.
+ *
+ * @param mixed $value The value to sanitize.
  * @return string The sanitized string.
  */
-function sanitize(?string $string): string {
-    return htmlspecialchars($string ?? '', ENT_QUOTES, 'UTF-8');
+function sanitize(mixed $value): string {
+    if (is_array($value) || is_object($value)) {
+        return '';
+    }
+    if (is_bool($value)) {
+        return $value ? '1' : '';
+    }
+    if ($value === null) {
+        return '';
+    }
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
+/**
+ * Read a trimmed string parameter from a request array.
+ * Returns an empty string when the parameter is missing or is
+ * not a scalar value (for example "search[]=a").
+ *
+ * @param array  $source  The request array (usually $_GET or $_POST).
+ * @param string $key     The parameter name.
+ * @param int    $maxLen  Maximum length to keep (0 = unlimited).
+ * @return string The trimmed parameter value.
+ */
+function requestString(array $source, string $key, int $maxLen = 0): string {
+    if (!isset($source[$key]) || is_array($source[$key]) || is_object($source[$key])) {
+        return '';
+    }
+    $value = trim((string) $source[$key]);
+    if ($maxLen > 0 && strlen($value) > $maxLen) {
+        $value = substr($value, 0, $maxLen);
+    }
+    return $value;
 }

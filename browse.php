@@ -19,9 +19,9 @@ require_once 'includes/auth.php';   // Authentication and sanitization helpers
 $pageTitle = 'Browse Movies';
 
 // --- Sanitize and validate request parameters ---
-$search = trim($_GET['search'] ?? '');
+$search = requestString($_GET, 'search', 100);
 $genreId = (int) ($_GET['genre'] ?? 0);
-$sort = $_GET['sort'] ?? 'newest';
+$sort = requestString($_GET, 'sort');
 $page = max(1, (int) ($_GET['page'] ?? 1));
 $limit = 12; // 12 items per page for clean 2/3/4/6 column responsive grid
 $offset = ($page - 1) * $limit;
@@ -36,7 +36,7 @@ $allowedSorts = [
     'popular' => 'Most Popular'
 ];
 
-if (!array_key_exists($sort, $allowedSorts)) {
+if ($sort === '' || !array_key_exists($sort, $allowedSorts)) {
     $sort = 'newest';
 }
 
@@ -155,9 +155,37 @@ if ($genreId > 0) {
 // Helper: build pagination URL preserving existing query parameters
 if (!function_exists('getPageUrl')) {
     function getPageUrl(int $targetPage): string {
-        $params = $_GET;
+        // Only carry over the parameters this page understands, so the
+        // URL stays short and no untrusted value is echoed back.
+        $params = [];
+
+        $search = requestString($_GET, 'search', 100);
+        if ($search !== '') {
+            $params['search'] = $search;
+        }
+
+        $genre = (int) ($_GET['genre'] ?? 0);
+        if ($genre > 0) {
+            $params['genre'] = $genre;
+        }
+
+        $sort = requestString($_GET, 'sort');
+        if ($sort !== '') {
+            $params['sort'] = $sort;
+        }
+
         $params['page'] = $targetPage;
+
         return 'browse.php?' . http_build_query($params);
+    }
+}
+
+// Helper: page numbers to display, windowed around the current page
+if (!function_exists('getPageWindow')) {
+    function getPageWindow(int $current, int $total, int $window = 2): array {
+        $start = max(1, $current - $window);
+        $end = min($total, $current + $window);
+        return range($start, $end);
     }
 }
 
@@ -211,11 +239,11 @@ require_once 'includes/header.php';
         <!-- Action Buttons -->
         <div class="filter-actions">
             <button type="submit" class="btn btn-primary">
-                <i class="fa-solid fa-filter"></i> Apply Filters
+                <i class="fa-solid fa-filter" aria-hidden="true"></i> Apply Filters
             </button>
             <?php if ($hasActiveFilters): ?>
                 <a href="browse.php" class="btn btn-secondary" title="Reset all filters">
-                    <i class="fa-solid fa-rotate-left"></i> Reset
+                    <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Reset
                 </a>
             <?php endif; ?>
         </div>
@@ -243,6 +271,7 @@ require_once 'includes/header.php';
 
 <!-- ===== MOVIES GRID OR EMPTY STATE ===== -->
 <?php if (!empty($movies)): ?>
+    <h2 class="sr-only">Movie results</h2>
     <div class="movie-grid">
         <?php foreach ($movies as $movie): 
             $mId = (int) $movie['id'];
@@ -262,7 +291,7 @@ require_once 'includes/header.php';
                             <img src="<?php echo sanitize($mPosterPath); ?>" alt="<?php echo $mTitle; ?> Poster" loading="lazy">
                         <?php else: ?>
                             <div class="poster-placeholder">
-                                <i class="fa-solid fa-film"></i>
+                                <i class="fa-solid fa-film" aria-hidden="true"></i>
                                 <span class="poster-placeholder-text"><?php echo $mTitle; ?></span>
                             </div>
                         <?php endif; ?>
@@ -272,7 +301,7 @@ require_once 'includes/header.php';
                         <div class="card-meta">
                             <span class="card-year"><?php echo $mYear; ?></span>
                             <span class="card-rating">
-                                <i class="fa-solid fa-star"></i>
+                                <i class="fa-solid fa-star" aria-hidden="true"></i>
                                 <span><?php echo $mRating !== null ? $mRating : '—'; ?></span>
                             </span>
                         </div>
@@ -284,35 +313,50 @@ require_once 'includes/header.php';
 
     <!-- ===== PAGINATION CONTROLS ===== -->
     <?php if ($totalPages > 1): ?>
+        <?php $pageWindow = getPageWindow($page, $totalPages); ?>
         <nav class="pagination" aria-label="Catalog pagination">
             <!-- Previous Button -->
             <?php if ($page > 1): ?>
-                <a href="<?php echo getPageUrl($page - 1); ?>" class="pagination-item" aria-label="Previous Page">
-                    <i class="fa-solid fa-chevron-left"></i>
+                <a href="<?php echo sanitize(getPageUrl($page - 1)); ?>" class="pagination-item" aria-label="Previous Page">
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
                 </a>
             <?php else: ?>
                 <span class="pagination-item disabled" aria-disabled="true">
-                    <i class="fa-solid fa-chevron-left"></i>
+                    <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
                 </span>
             <?php endif; ?>
 
-            <!-- Page Number Links -->
-            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <!-- Page Number Links (windowed so they never overflow on phones) -->
+            <?php if ($pageWindow[0] > 1): ?>
+                <a href="<?php echo sanitize(getPageUrl(1)); ?>" class="pagination-item">1</a>
+                <?php if ($pageWindow[0] > 2): ?>
+                    <span class="pagination-item disabled" aria-hidden="true">&hellip;</span>
+                <?php endif; ?>
+            <?php endif; ?>
+
+            <?php foreach ($pageWindow as $i): ?>
                 <?php if ($i === $page): ?>
                     <span class="pagination-item active" aria-current="page"><?php echo $i; ?></span>
                 <?php else: ?>
-                    <a href="<?php echo getPageUrl($i); ?>" class="pagination-item"><?php echo $i; ?></a>
+                    <a href="<?php echo sanitize(getPageUrl($i)); ?>" class="pagination-item"><?php echo $i; ?></a>
                 <?php endif; ?>
-            <?php endfor; ?>
+            <?php endforeach; ?>
+
+            <?php if ($pageWindow[count($pageWindow) - 1] < $totalPages): ?>
+                <?php if ($pageWindow[count($pageWindow) - 1] < $totalPages - 1): ?>
+                    <span class="pagination-item disabled" aria-hidden="true">&hellip;</span>
+                <?php endif; ?>
+                <a href="<?php echo sanitize(getPageUrl($totalPages)); ?>" class="pagination-item"><?php echo $totalPages; ?></a>
+            <?php endif; ?>
 
             <!-- Next Button -->
             <?php if ($page < $totalPages): ?>
-                <a href="<?php echo getPageUrl($page + 1); ?>" class="pagination-item" aria-label="Next Page">
-                    <i class="fa-solid fa-chevron-right"></i>
+                <a href="<?php echo sanitize(getPageUrl($page + 1)); ?>" class="pagination-item" aria-label="Next Page">
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                 </a>
             <?php else: ?>
                 <span class="pagination-item disabled" aria-disabled="true">
-                    <i class="fa-solid fa-chevron-right"></i>
+                    <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                 </span>
             <?php endif; ?>
         </nav>
@@ -321,7 +365,7 @@ require_once 'includes/header.php';
 <?php else: ?>
     <!-- ===== EMPTY STATE ===== -->
     <div class="empty-state">
-        <i class="fa-solid fa-film empty-icon"></i>
+        <i class="fa-solid fa-film empty-icon" aria-hidden="true"></i>
         <h2 class="empty-title">No Movies Found</h2>
         <p class="empty-description">
             We couldn't find any films matching your search 
@@ -333,7 +377,7 @@ require_once 'includes/header.php';
             <?php endif; ?>. Try adjusting your query or resetting the filters.
         </p>
         <a href="browse.php" class="btn btn-primary">
-            <i class="fa-solid fa-rotate-left"></i> Clear All Filters
+            <i class="fa-solid fa-rotate-left" aria-hidden="true"></i> Clear All Filters
         </a>
     </div>
 <?php endif; ?>

@@ -126,7 +126,7 @@ CREATE TABLE reviews (
 -- =====================================================
 -- Password "admin123" hashed with PHP password_hash()
 INSERT INTO users (username, email, password, role) VALUES
-('admin', 'admin@moviedb.com', '$2y$10$vNPsu9ir6BZjXr/btkIs3.6KbNZvwzpm0YKbFJeb2IOZf4iRnRAI2', 'admin');
+('admin', 'admin@moviedb.com', '$2y$10$aTYLu7apH0TRjQIvofmeve7HnGOwNqeL8Du8n6Fwh69xhbPWgALwS', 'admin');
 
 
 -- =====================================================
@@ -184,31 +184,31 @@ INSERT INTO movies (title, synopsis, release_date, director, cast_members, runti
  'When a beautiful stranger leads computer hacker Neo to a forbidding underworld, he discovers the shocking truth — the life he knows is the elaborate deception of an evil cyber-intelligence.',
  '1999-03-31', 'Lana Wachowski, Lilly Wachowski',
  'Keanu Reeves, Laurence Fishburne, Carrie-Anne Moss, Hugo Weaving',
- 136, NULL),
+ 136, 'poster_6.jpg'),
 
 ('Spirited Away',
  'During her family\'s move to the suburbs, a sullen 10-year-old girl wanders into a world ruled by gods, witches, and spirits, and where humans are changed into beasts.',
  '2001-07-20', 'Hayao Miyazaki',
  'Rumi Hiiragi, Miyu Irino, Mari Natsuki, Takeshi Naito',
- 125, NULL),
+ 125, 'poster_7.jpg'),
 
 ('Interstellar',
  'When Earth becomes uninhabitable in the future, a farmer and ex-NASA pilot is tasked with piloting a spacecraft, along with a team of researchers, to find a new planet for humans.',
  '2014-11-07', 'Christopher Nolan',
  'Matthew McConaughey, Anne Hathaway, Jessica Chastain, Michael Caine',
- 169, NULL),
+ 169, 'poster_8.jpg'),
 
 ('Parasite',
  'Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.',
  '2019-05-30', 'Bong Joon-ho',
  'Song Kang-ho, Lee Sun-kyun, Cho Yeo-jeong, Choi Woo-shik',
- 132, NULL),
+ 132, 'poster_9.jpg'),
 
 ('The Silence of the Lambs',
  'A young F.B.I. cadet must receive the help of an incarcerated and manipulative cannibal killer to help catch another serial killer, a madman who skins his victims.',
  '1991-02-14', 'Jonathan Demme',
  'Jodie Foster, Anthony Hopkins, Scott Glenn, Ted Levine',
- 118, NULL);
+ 118, 'poster_10.jpg');
 
 
 -- =====================================================
